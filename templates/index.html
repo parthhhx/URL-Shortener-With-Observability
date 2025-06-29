@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        h1 {
+            color: #333;
+        }
+        input[type="url"] {
+            width: 80%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #shortUrlDisplay {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background-color: #e8f5e9;
+            border: 1px solid #4CAF50;
+            color: #2e7d32;
+        }
+        .error {
+            background-color: #ffebee;
+            border: 1px solid #ef5350;
+            color: #c62828;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .copy-btn {
+            background-color: #2196F3;
+            margin-left: 10px;
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+        .copy-btn:hover {
+            background-color: #1976D2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>URL Shortener</h1>
+        <form id="urlForm">
+            <input type="url" 
+                   id="longUrl" 
+                   name="url" 
+                   placeholder="Enter your long URL here (e.g., https://example.com)" 
+                   required>
+            <br>
+            <button type="submit" id="submitBtn">Shorten URL</button>
+            <span id="loadingSpinner" class="loading" style="display: none;"></span>
+        </form>
+        <div id="shortUrlDisplay"></div>
+    </div>
+
+    <script>
+        // Get DOM elements
+        const urlForm = document.getElementById('urlForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const shortUrlDisplay = document.getElementById('shortUrlDisplay');
+        const longUrlInput = document.getElementById('longUrl');
+
+        // Function to validate URL
+        function isValidUrl(url) {
+            try {
+                new URL(url);
+                return true;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        // Function to copy text to clipboard
+        async function copyToClipboard(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                alert('URL copied to clipboard!');
+            } catch (err) {
+                console.error('Failed to copy text:', err);
+                alert('Failed to copy URL to clipboard');
+            }
+        }
+
+        // Handle form submission
+        urlForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Get the URL
+            const longUrl = longUrlInput.value.trim();
+            
+            // Validate URL
+            if (!isValidUrl(longUrl)) {
+                shortUrlDisplay.innerHTML = 'Please enter a valid URL (e.g., https://example.com)';
+                shortUrlDisplay.className = 'error';
+                shortUrlDisplay.style.display = 'block';
+                return;
+            }
+
+            // Show loading state
+            submitBtn.disabled = true;
+            loadingSpinner.style.display = 'inline-block';
+            shortUrlDisplay.style.display = 'none';
+
+            try {
+                // Send POST request
+                const response = await fetch('/shorten', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({url: longUrl})
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Display success message with copy button
+                    shortUrlDisplay.innerHTML = `
+                        Your shortened URL: 
+                        <a href="${data.short_url}" target="_blank">
+                            ${data.short_url}
+                        </a>
+                        <button onclick="copyToClipboard('${data.short_url}')" class="copy-btn">
+                            Copy URL
+                        </button>
+                    `;
+                    shortUrlDisplay.className = 'success';
+                } else {
+                    // Display error message
+                    shortUrlDisplay.innerHTML = `Error: ${data.error || 'Failed to shorten URL'}`;
+                    shortUrlDisplay.className = 'error';
+                }
+            } catch (error) {
+                // Handle network or other errors
+                shortUrlDisplay.innerHTML = 'Error: Could not connect to the server';
+                shortUrlDisplay.className = 'error';
+            } finally {
+                // Reset UI state
+                submitBtn.disabled = false;
+                loadingSpinner.style.display = 'none';
+                shortUrlDisplay.style.display = 'block';
+            }
+        });
+
+        // Add input validation feedback
+        longUrlInput.addEventListener('input', (e) => {
+            const url = e.target.value.trim();
+            if (url && !isValidUrl(url)) {
+                longUrlInput.style.borderColor = '#ef5350';
+            } else {
+                longUrlInput.style.borderColor = '#ddd';
+            }
+        });
+    </script>
+</body>
+</html> 
