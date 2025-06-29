@@ -56,7 +56,21 @@ url_shortner/
    ```
    Wait for a few moments for the services to start up completely.
 
-6. **Set up environment variables**
+6. **Create and run the Kibana service token script**
+   ```bash
+   # Make the script executable
+   chmod +x create_kibana_token.sh
+   
+   # Run the script to create a Kibana service token
+   ./create_kibana_token.sh
+   ```
+   This script will:
+   - Create a service account token for Kibana
+   - Set the token in your environment
+   - Update the Docker Compose configuration
+   - Restart Kibana with the new token
+
+7. **Set up environment variables**
    Create a `.env` file in the project root with the following content:
    ```
    ELASTICSEARCH_URL=http://localhost:9200
@@ -69,13 +83,13 @@ url_shortner/
    ```
    Adjust the values according to your setup.
 
-7. **Run the Elasticsearch setup script**
+8. **Run the Elasticsearch setup script**
    ```bash
    python setup_elasticsearch.py
    ```
    This will create the necessary index and mappings in Elasticsearch.
 
-8. **Start the Flask application**
+9. **Start the Flask application**
    ```bash
    flask run
    ```
